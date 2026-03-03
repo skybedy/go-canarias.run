@@ -1,0 +1,39 @@
+[
+  {
+    "id": "1",
+    "name": "Transgrancanaria Ultra",
+    "date_raw": "15. 3. 2026",
+    "date_parsed": "",
+    "month": "MAR",
+    "island": "Gran Canaria",
+    "location": "Maspalomas",
+    "distances": [
+      "126km",
+      "84km",
+      "46km"
+    ],
+    "source": "CronoCanarias",
+    "status": "open",
+    "url": "#",
+    "type": "trail",
+    "description": ""
+  },
+  {
+    "id": "2",
+    "name": "Media Maratón Las Galletas",
+    "date_raw": "2. 4. 2026",
+    "date_parsed": "",
+    "month": "APR",
+    "island": "Tenerife",
+    "location": "Arona",
+    "distances": [
+      "21km",
+      "10km"
+    ],
+    "source": "Sportmaniacs",
+    "status": "closing",
+    "url": "#",
+    "type": "asphalt",
+    "description": ""
+  }
+]

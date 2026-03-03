@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <!-- Meta tags for SEO & Theme -->
+    <meta name="theme-color" content="#222222">
+    <meta name="description" content="canarias.run - Ultimátní kalendář běžeckých závodů na Kanárských ostrovech. Najdi svůj další trailový nebo silniční závod v ráji.">
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <header class="main-header">
+        <div class="container header-container">
+            <a href="/" class="logo">canarias<span>.run</span></a>
+            
+            <nav class="main-nav">
+                <div class="lang-switcher">
+                    <button class="lang-btn active">CS</button>
+                    <button class="lang-btn">EN</button>
+                    <button class="lang-btn">ES</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        {{template "content" .}}
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container footer-container">
+            <div class="footer-cta">
+                <h3>Pořádáte závod?</h3>
+                <p>Přidejte ho do canarias.run a získejte více běžců na startu.</p>
+                <a href="#" class="btn btn-outline-yellow">Přidat závod</a>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 canarias.run - Data agregována z regionálních zdrojů (CronoCanarias, Trackingsport, FCA, aj.)</p>
+                <div class="footer-links">
+                    <a href="#">O projektu</a>
+                    <a href="#">Kontakt</a>
+                    <a href="#">Ochrana soukromí</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
