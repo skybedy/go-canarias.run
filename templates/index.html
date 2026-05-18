@@ -1,137 +1,36 @@
 {{define "content"}}
-<section class="hero overlay-dark">
-    <!-- Pozadí s mapou stromečku / hor / vulkánů může jít přes CSS -->
-    <div class="hero-bg"></div>
-    <div class="container hero-content">
-        <h1 class="hero-title">Najdi svůj další závod v ráji</h1>
-        <p class="hero-subtitle">Běhej v oblacích Pico del Teide, přes sopečná pole Lanzarote nebo pralesem Anaga.
-            Ultimátní kalendář trailů a silničních běhů na Kanárech.</p>
-
-        <!-- Search and Filters Form -->
-        <form class="search-box">
-            <div class="filter-group">
-                <input type="text" placeholder="Hledat závod (např. Transvulcania)" class="search-input">
-            </div>
-
-            <div class="filters-row">
-                <div class="filter-item">
-                    <label>Ostrov</label>
-                    <select class="filter-select">
-                        <option value="">Všechny ostrovy</option>
-                        <option value="gc">Gran Canaria</option>
-                        <option value="tf">Tenerife</option>
-                        <option value="lp">La Palma</option>
-                        <option value="lz">Lanzarote</option>
-                        <option value="fv">Fuerteventura</option>
-                        <option value="lg">La Gomera</option>
-                        <option value="eh">El Hierro</option>
-                        <option value="lg">La Graciosa</option>
-                    </select>
-                </div>
-
-                <div class="filter-item">
-                    <label>Typ povrchu</label>
-                    <select class="filter-select">
-                        <option value="">Vše (Asfalt i Trail)</option>
-                        <option value="trail">Trail / Hory</option>
-                        <option value="asphalt">Silnice / Asfalt</option>
-                    </select>
-                </div>
-
-                <div class="filter-item">
-                    <label>Měsíc konání</label>
-                    <select class="filter-select">
-                        <option value="">Kdykoli</option>
-                        <option value="01">Leden</option>
-                        <option value="02">Únor</option>
-                        <option value="03">Březen</option>
-                        <option value="04">Duben</option>
-                        <option value="05">Květen</option>
-                        <option value="06">Červen</option>
-                        <!-- ... etc ... -->
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-yellow btn-search">
-                    <span class="icon-search">Go!</span>
-                </button>
-            </div>
-        </form>
-
-        <!-- Quick Islands (Logistical map mockup text) -->
-        <div class="quick-islands">
-            <span class="island-badge">🌴 Tenerife</span>
-            <span class="island-badge">⛰️ Gran Canaria</span>
-            <span class="island-badge">🌋 La Palma</span>
-            <span class="island-badge">🌵 Lanzarote</span>
-        </div>
-    </div>
-</section>
-
-<!-- Stats / Results Header -->
-<section class="results-info">
-    <div class="container filters-active">
-        <h2>Objev nadcházející události</h2>
-        <span class="results-count">Nalezeno {{len .Races}} závodů</span>
-    </div>
-</section>
-
-<!-- Race Grid -->
-<section class="race-grid">
-    <div class="container">
-        <div class="cards-wrapper">
+<div class="container" style="padding: 2rem 0;">
+    <table
+        style="width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #eee; font-family: 'Inter', sans-serif;">
+        <thead style="background: #f4f4f4;">
+            <tr>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Datum</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Závod</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Lokalita</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Trasy</th>
+                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Odkaz</th>
+            </tr>
+        </thead>
+        <tbody>
             {{range .Races}}
-            <article class="race-card type-{{.Type}}">
-
-                <!-- Left: Date -->
-                <div class="card-date">
-                    <span class="date-day">{{.Day}}</span>
-                    <span class="date-month">{{.Month}}</span>
-                </div>
-
-                <!-- Center: Info -->
-                <div class="card-info">
-                    <div class="card-meta">
-                        <span class="tag-island">{{.Island}}</span>
-                        <span class="tag-location">{{.Location}}</span>
-                    </div>
-
-                    <h3 class="race-name">{{.Name}}</h3>
-
-                    <div class="race-distances">
-                        <span class="distance-icon">🏃</span>
-                        <strong>Trasy:</strong> {{.DistancesStr}}
-                    </div>
-
-                    <!-- Source Label -->
-                    <div class="source-label">
-                        <span class="source-text">Zdroj: {{.Source}}</span>
-                    </div>
-                </div>
-
-                <!-- Right: Action & Status -->
-                <div class="card-actions">
-                    <!-- Dynamic Status logic mockup -->
-                    <div class="status-indicator status-{{.Status}}">
-                        {{if eq .Status "open"}}
-                        🟢 Registrace otevřena
-                        {{else if eq .Status "closing"}}
-                        🟠 Blíží se vyprodání
-                        {{else if eq .Status "past"}}
-                        ⚪ Závod proběhl
-                        {{else}}
-                        {{.Status}}
-                        {{end}}
-                    </div>
-
-                    <a href="{{.URL}}" class="btn btn-primary" target="_blank" rel="noopener">
-                        Více & Registrace
-                    </a>
-                </div>
-            </article>
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 12px; white-space: nowrap; font-family: monospace; color: #d35400;">
+                    {{.DateFormatted}}</td>
+                <td style="padding: 12px;">
+                    <div style="font-weight: bold;">{{.Name}}</div>
+                    <div style="font-size: 0.8em; color: #777;">{{.TypeCZ}}</div>
+                </td>
+                <td style="padding: 12px;">
+                    <div>{{.Island}}</div>
+                </td>
+                <td style="padding: 12px;">{{if .DistancesStr}}{{.DistancesStr}}{{else}}-{{end}}</td>
+                <td style="padding: 12px; text-align: center;">
+                    <a href="{{.URL}}" target="_blank"
+                        style="color: #3498db; text-decoration: none; font-weight: bold;">Odkaz</a>
+                </td>
+            </tr>
             {{end}}
-        </div>
-    </div>
-</section>
-
+        </tbody>
+    </table>
+</div>
 {{end}}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"canarias.run/internal/models"
+	"canarias.run/internal/utils"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -17,7 +18,7 @@ type Scraper struct {
 
 func NewScraper() *Scraper {
 	return &Scraper{
-		URL: "https://sportmaniacs.com/es/races/search?q=Canarias",
+		URL: "https://sportmaniacs.com/es/races",
 	}
 }
 
@@ -71,7 +72,7 @@ func (s *Scraper) Scrape(ctx context.Context) ([]models.Race, error) {
 			Name:      title,
 			DateRaw:   dateRaw,
 			Month:     "TBD",
-			Island:    "Ze scrapování",
+			Island:    utils.IdentifyIsland(title, location),
 			Location:  location,
 			Distances: []string{},
 			Source:    s.Name(),
@@ -80,7 +81,10 @@ func (s *Scraper) Scrape(ctx context.Context) ([]models.Race, error) {
 			Type:      "asphalt",
 		}
 
-		races = append(races, race)
+		// Only add if it's actually in Canarias
+		if race.Island != "Canarias" || strings.Contains(strings.ToLower(title+location), "canaria") {
+			races = append(races, race)
+		}
 	})
 
 	return races, nil
