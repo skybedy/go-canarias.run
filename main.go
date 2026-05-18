@@ -5,12 +5,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 
+	"canarias.run/internal/config"
 	"canarias.run/internal/models"
 	"canarias.run/internal/scraper"
 	"canarias.run/internal/scraper/ahotu"
@@ -45,8 +44,13 @@ func init() {
 func main() {
 	log.Println("=== Inicializace canarias.run ===")
 
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Chyba konfigurace: %v", err)
+	}
+
 	// Inicializace JSON úložiště
-	store = storage.NewJSONStorage("data.json")
+	store = storage.NewJSONStorage(cfg.DataFile)
 
 	// Přípojka pro systém stahování (Scraper Orchestrator)
 	m := scraper.NewManager(store)
@@ -67,8 +71,12 @@ func main() {
 	m.Register(codex.New())
 
 	// Spustit Scrapovacího robota na pozadí (synch jednou za 24 hodin)
-	log.Println("Spouštím robota na pozadí pro scrapování reálných dat...")
-	m.RunDaemon(context.Background(), 24*time.Hour)
+	if cfg.EnableScraperDaemon {
+		log.Printf("Spouštím robota na pozadí pro scrapování dat (interval: %s)...", cfg.ScraperInterval)
+		m.RunDaemon(context.Background(), cfg.ScraperInterval)
+	} else {
+		log.Println("Background scraping daemon je vypnutý přes ENABLE_SCRAPER_DAEMON.")
+	}
 
 	// Pokusíme se načíst data, pokud neexistují, vložíme úvodní
 	// initMockDataIfEmpty() (Mockdata už teď nepotřebujeme plnit, ale pro sichr si to zde necháme jako fall-back)
@@ -80,14 +88,10 @@ func main() {
 
 	// Hlavní route
 	http.HandleFunc("/", handleIndex)
+	http.HandleFunc("/healthz", handleHealthz)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Server poslouchá na http://localhost:%s", port)
-	err := http.ListenAndServe(":"+port, nil)
+	log.Printf("Server poslouchá na http://localhost:%s", cfg.Port)
+	err = http.ListenAndServe(":"+cfg.Port, nil)
 	if err != nil {
 		log.Fatalf("Chyba při spouštění serveru: %v", err)
 	}
@@ -191,4 +195,13 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Chyba při renderování šablony: %v", err)
 		http.Error(w, "Vnitřní chyba serveru", http.StatusInternalServerError)
 	}
+}
+
+func handleHealthz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
 }

@@ -6,10 +6,14 @@
 
 ## Aktuální stav
 
-- Projekt je aktivně rozpracovaný na větvi `combine-race-sources`.
-- V pracovním stromu je větší množství lokálních změn (tracked i untracked), včetně nových scraperů a modulu `internal/codexcalendar`.
-- Aplikace má funkční testy (`go test ./...` prošlo).
-- Build je funkční (`go build ./...` prošel při použití `GOCACHE=/tmp/go-build`).
+- Projekt je aktuálně na větvi `main`.
+- Dokončen první foundation krok bez zásahu do core logiky scraperů.
+- Přidána centralizovaná ENV konfigurace v `internal/config/config.go` a napojení v `main.go`.
+- Přidán health endpoint `GET /healthz`.
+- Přidány základní provozní soubory `README.md` a `Makefile`.
+- Ověření prochází přes:
+  - `GOCACHE=/tmp/go-build go test ./...`
+  - `GOCACHE=/tmp/go-build go build ./...`
 
 ## Používaný stack
 
@@ -21,34 +25,40 @@
 
 ## Hlavní adresáře a soubory
 
-- `main.go`: start aplikace, registrace scraperů, HTTP routing
+- `main.go`: start aplikace, registrace scraperů, HTTP routing, napojení konfigurace
+- `internal/config/config.go`: načítání a validace runtime konfigurace z ENV
 - `internal/scraper/`: scrapery jednotlivých zdrojů + manager
-- `internal/codexcalendar/`: agregace/normalizace/deduplikace zdrojů
 - `internal/models/`: datové modely
 - `internal/storage/`: persistence vrstva (JSON storage)
 - `templates/`: HTML šablony
 - `static/`: statické assety (CSS/JS)
 - `data.json`: uložená data závodů
 - `docs/`: projektová dokumentace
+- `README.md`: základní run/test/build instrukce a ENV proměnné
+- `Makefile`: sjednocené tasky `run`, `test`, `build`
 
 ## Jak projekt spustit
 
-- Lokálně: `go run .`
+- Lokálně: `go run .` nebo `make run`
 - Volitelný port: env `PORT` (default `8080`)
-- Aplikace po startu spustí background scraping daemon s intervalem 24h.
+- Data soubor: env `DATA_FILE` (default `data.json`)
+- Background scraping daemon:
+  - `ENABLE_SCRAPER_DAEMON=true|false` (default `true`)
+  - `SCRAPER_INTERVAL_HOURS` (default `24`)
+- Health check endpoint: `GET /healthz`
 
 ## Jak projekt testovat
 
-- `go test ./...`
+- `make test`
+- nebo `GOCACHE=/tmp/go-build go test ./...`
 
 ## Jak projekt buildit
 
-- `go build ./...`
-- V sandbox/restricted prostředí může být potřeba: `GOCACHE=/tmp/go-build go build ./...`
+- `make build`
+- nebo `GOCACHE=/tmp/go-build go build ./...`
 
 ## Známá omezení/problémy
 
-- `README.md`: nezjištěno (v repozitáři aktuálně není).
 - `Dockerfile`: nezjištěno (v repozitáři aktuálně není).
 - `docker-compose.yml`: nezjištěno (v repozitáři aktuálně není).
 - `package.json`: nezjištěno (v repozitáři aktuálně není).
@@ -56,6 +66,6 @@
 
 ## Poznámky pro další navázání
 
-- Před každou změnou nejdřív zkontrolovat `git status`, protože workspace obsahuje rozpracované změny napříč více moduly.
-- Při práci se scrapery průběžně ověřovat deduplikaci a merge logiku (`internal/scraper`, `internal/codexcalendar`).
+- Prioritní další krok refactoru: rozdělit `main.go` do `internal/web` a `internal/app` bez změny scraper funkcionality.
+- Držet malé inkrementální změny a po každé ověřovat `go test ./...` a `go build ./...` s `GOCACHE=/tmp/go-build`.
 - Pokud se mění behavior serveru nebo datový model, aktualizovat `DECISIONS.md` a `TODO.md`.

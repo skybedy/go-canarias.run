@@ -49,3 +49,18 @@ Codex je technický spolupracovník pro tento repozitář. Jeho úkol je navrhov
   - provozní úlohy spouštět jako samostatné příkazy (CLI mode) i periodicky
   - připravenost na DB migrace (`migrations/*.up.sql`, `*.down.sql`) a `Makefile` tasky
 - Při zavádění stylu zachovej kompatibilitu s aktuálním během aplikace.
+
+## Oprávnění a autonomní běh Codexu
+
+- Cíl: minimalizovat ruční schvalování a zabránit zaseknutí práce při nepřítomnosti uživatele.
+- V UI schvalování používej ukládání pravidel (persist/always allow) pro opakované bezpečné příkazy.
+- Preferované schválené prefixy:
+  - `git checkout`
+  - `git branch`
+  - `git merge`
+  - `git commit -m`
+  - `git add`
+  - `go test ./...`
+  - `go build ./...`
+- Pokud to UI umožní, používej méně restriktivní režim schvalování pro aktuální projekt/session.
+- Codex nemůže měnit globální policy sám; může pouze žádat o schválení a navrhovat prefix pravidla.
