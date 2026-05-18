@@ -3,6 +3,9 @@ package scraper
 import (
 	"context"
 	"log"
+	"regexp"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -80,15 +83,151 @@ func (m *Manager) ExecuteAll(ctx context.Context) {
 	wg.Wait()
 
 	if len(allRaces) > 0 {
-		// V reálném nasazení bychom zde dělali mergování (aby se nesmazaly staré atd.),
-		// pro MVP rovnou přepíšeme celou databázi novými daty.
-		err := m.store.SaveRaces(ctx, allRaces)
+		existing, err := m.store.GetAllRaces(ctx)
+		if err != nil {
+			log.Printf("[Manager] ⚠️ Nelze načíst stávající data pro merge: %v", err)
+		}
+
+		merged := MergeRaces(append(existing, allRaces...))
+		err = m.store.SaveRaces(ctx, merged)
 		if err != nil {
 			log.Printf("[Manager] ❌ Nelze uložit získaná data: %v", err)
 		} else {
-			log.Printf("[Manager] 🎉 Úspěšně uloženo %d závodů z %d zdrojů", len(allRaces), len(m.scrapers))
+			log.Printf("[Manager] 🎉 Úspěšně uloženo %d unikátních závodů z %d zdrojů (%d stažených položek před sloučením, %d sloučeno/odfiltrováno)", len(merged), len(m.scrapers), len(allRaces), len(allRaces)-len(merged))
 		}
 	} else {
 		log.Println("[Manager] ⚠️ Pozor: Žádné závody ke stažení nebyly nalezeny.")
 	}
+}
+
+// MergeRaces combines races from multiple scraper strategies and keeps the
+// richest record for each date/name pair.
+func MergeRaces(in []models.Race) []models.Race {
+	merged := make(map[string]models.Race, len(in))
+	for _, race := range in {
+		key := raceKey(race)
+		if key == "" {
+			key = fallbackKey(race)
+		}
+		if key == "" {
+			continue
+		}
+
+		if existing, ok := merged[key]; ok {
+			merged[key] = mergeRace(existing, race)
+			continue
+		}
+		merged[key] = race
+	}
+
+	out := make([]models.Race, 0, len(merged))
+	for _, race := range merged {
+		out = append(out, race)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].DateParsed == out[j].DateParsed {
+			return out[i].Name < out[j].Name
+		}
+		return out[i].DateParsed < out[j].DateParsed
+	})
+	return out
+}
+
+func mergeRace(existing, incoming models.Race) models.Race {
+	out := existing
+	if richerName(incoming.Name, out.Name) {
+		out.Name = incoming.Name
+	}
+	if out.ID == "" {
+		out.ID = incoming.ID
+	}
+	if out.DateRaw == "" {
+		out.DateRaw = incoming.DateRaw
+	}
+	if out.DateParsed == "" {
+		out.DateParsed = incoming.DateParsed
+	}
+	if out.Month == "" {
+		out.Month = incoming.Month
+	}
+	if out.Island == "" || (out.Island == "Canarias" && incoming.Island != "") {
+		out.Island = incoming.Island
+	}
+	if out.Location == "" || (out.Location == "Canarias" && incoming.Location != "") {
+		out.Location = incoming.Location
+	}
+	if len(out.Distances) == 0 {
+		out.Distances = incoming.Distances
+	}
+	out.Source = mergeSourceLabels(out.Source, incoming.Source)
+	if out.Status == "" {
+		out.Status = incoming.Status
+	}
+	if out.URL == "" || (strings.HasPrefix(out.URL, "#") && incoming.URL != "") {
+		out.URL = incoming.URL
+	}
+	if out.Type == "" || out.Type == "Running" || out.Type == "running" {
+		out.Type = incoming.Type
+	}
+	if out.Description == "" {
+		out.Description = incoming.Description
+	}
+	return out
+}
+
+func raceKey(r models.Race) string {
+	date := firstNonEmpty(r.DateParsed, r.DateRaw)
+	name := normalizeKey(r.Name)
+	if date == "" || name == "" {
+		return ""
+	}
+	return date + "|" + name
+}
+
+func fallbackKey(r models.Race) string {
+	url := strings.TrimSpace(strings.ToLower(r.URL))
+	if url == "" || url == "#" {
+		return ""
+	}
+	return "url|" + url
+}
+
+var nonKeyChars = regexp.MustCompile(`[^a-z0-9]+`)
+
+func normalizeKey(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	v = strings.NewReplacer(
+		"á", "a", "é", "e", "í", "i", "ó", "o", "ú", "u", "ü", "u",
+		"ñ", "n", "ç", "c",
+	).Replace(v)
+	return strings.Trim(nonKeyChars.ReplaceAllString(v, ""), "_")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func richerName(a, b string) bool {
+	return len(strings.TrimSpace(a)) > len(strings.TrimSpace(b))
+}
+
+func mergeSourceLabels(a, b string) string {
+	labels := make([]string, 0, 4)
+	seen := make(map[string]bool)
+	for _, source := range []string{a, b} {
+		for _, part := range strings.Split(source, "+") {
+			part = strings.TrimSpace(part)
+			if part == "" || seen[part] {
+				continue
+			}
+			seen[part] = true
+			labels = append(labels, part)
+		}
+	}
+	return strings.Join(labels, "+")
 }

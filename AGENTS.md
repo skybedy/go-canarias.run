@@ -26,6 +26,7 @@ Codex je technický spolupracovník pro tento repozitář. Jeho úkol je navrhov
 ## Pravidla práce
 
 - Nejdřív vždy čti aktuální stav projektu.
+- Před změnami vždy ověř aktuální adresář (`pwd`).
 - Vždy zkontroluj `git status`.
 - Nepředpokládej kontext ze starých chatů.
 - Před větší změnou stručně popiš plán.
@@ -34,3 +35,17 @@ Codex je technický spolupracovník pro tento repozitář. Jeho úkol je navrhov
 - Aktuální stav zapisuj do `PROJECT_CONTEXT.md`.
 - Další kroky zapisuj do `TODO.md`.
 - Nepřidávej do commitu `.env` ani jiné citlivé soubory.
+- Nevracej (`revert`) nesouvisející rozpracované změny.
+- Nedělej destruktivní Git operace bez výslovného pokynu.
+- Dělej malé, cílené změny s jasným účelem.
+- Nepřidávej nové závislosti bez jasného důvodu.
+- Pokud ověření po změně nejde spustit, napiš to explicitně.
+
+## Jednotný styl převzatý z go-tene.life
+
+- Preferovaný aplikační styl pro nové části:
+  - jasně oddělené vrstvy `web/handlers`, `store/repository`, `models`, `collectors/scrapers`
+  - konfigurace přes env proměnné + včasná validace
+  - provozní úlohy spouštět jako samostatné příkazy (CLI mode) i periodicky
+  - připravenost na DB migrace (`migrations/*.up.sql`, `*.down.sql`) a `Makefile` tasky
+- Při zavádění stylu zachovej kompatibilitu s aktuálním během aplikace.

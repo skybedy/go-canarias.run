@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"canarias.run/internal/models"
+	"canarias.run/internal/utils"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -55,30 +56,45 @@ func (s *Scraper) Scrape(ctx context.Context) ([]models.Race, error) {
 
 	var races []models.Race
 
-	// Hledání DOM elementů na stránce.
-	// Očekáváme např. karty nebo tabulky událostí.
-	doc.Find(".event-card, .course-item, .post-item").Each(func(i int, sel *goquery.Selection) {
-		title := strings.TrimSpace(sel.Find("h3, .title, .event-title").Text())
-		dateRaw := strings.TrimSpace(sel.Find(".date, .event-date").Text())
-		link, _ := sel.Find("a").Attr("href")
-		location := strings.TrimSpace(sel.Find(".location, .event-location").Text())
+	// Hledáme element <article>, který obsahuje třídu event
+	doc.Find("article.type-event").Each(func(i int, sel *goquery.Selection) {
+		titleSel := sel.Find(".entry-title a")
+		title := strings.TrimSpace(titleSel.Text())
+		link, _ := titleSel.Attr("href")
+		dateRaw := strings.TrimSpace(sel.Find(".start_date").Text())
 
 		if title == "" {
-			return // Pokud nenajdeme ani nadpis, pravděpodobně nejde o závod
+			return // Pokud nenajdeme nadpis, pravděpodobně nejde o platný závod
+		}
+
+		// Pokus o zjištění typu (running, mtb, atd.) z ikonek
+		modalityDesc := "trail/asphalt" // výchozí
+		modalityImg := sel.Find(".modality img.icon-madality")
+		if modalityImg.Length() > 0 {
+			modTitle, _ := modalityImg.Attr("title")
+			if modTitle != "" {
+				modalityDesc = strings.ToLower(modTitle)
+			}
+		}
+
+		isl := utils.IdentifyIsland(title, link)
+		if isl == "Canarias" && link != "" {
+			detailText := utils.FetchText(ctx, link)
+			isl = utils.IdentifyIsland(title, link, detailText)
 		}
 
 		race := models.Race{
-			ID:        fmt.Sprintf("cronocanarias_%d", i),
+			ID:        fmt.Sprintf("cronoline_%d", i),
 			Name:      title,
 			DateRaw:   dateRaw,
-			Month:     "TBD", // Bude později doplněno detailnějším parsováním datumu
-			Island:    "Rozpoznáno z textu",
-			Location:  location,
-			Distances: []string{}, // Získáme později například z popisu závodu
+			Month:     "TBD", // Bude zpracováno společným datumových parserem
+			Island:    isl,
+			Location:  "",
+			Distances: []string{}, // Nelze získat bez detailu
 			Source:    s.Name(),
 			Status:    "open",
 			URL:       link,
-			Type:      "trail", // Výchozí odhad, lze zpřesnit na základě tagů
+			Type:      modalityDesc,
 		}
 
 		races = append(races, race)

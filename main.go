@@ -6,12 +6,28 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"sort"
+	"strings"
 	"time"
 
 	"canarias.run/internal/models"
 	"canarias.run/internal/scraper"
+	"canarias.run/internal/scraper/ahotu"
+	"canarias.run/internal/scraper/ascensotiming"
+	"canarias.run/internal/scraper/bulltiming"
+	"canarias.run/internal/scraper/codex"
+	"canarias.run/internal/scraper/conchipcanarias"
 	"canarias.run/internal/scraper/cronocanarias"
+	fca "canarias.run/internal/scraper/fca"
+	"canarias.run/internal/scraper/fuerteventura"
+	"canarias.run/internal/scraper/gomeraparadise"
+	"canarias.run/internal/scraper/lanzarote"
+	"canarias.run/internal/scraper/popularesgrancanaria"
+	"canarias.run/internal/scraper/procrono"
 	"canarias.run/internal/scraper/sportmaniacs"
+	"canarias.run/internal/scraper/toptime"
+	"canarias.run/internal/scraper/winerun"
 	"canarias.run/internal/storage"
 )
 
@@ -36,6 +52,19 @@ func main() {
 	m := scraper.NewManager(store)
 	m.Register(cronocanarias.NewScraper())
 	m.Register(sportmaniacs.NewScraper())
+	m.Register(procrono.New())
+	m.Register(conchipcanarias.New())
+	m.Register(bulltiming.New())
+	m.Register(ascensotiming.New())
+	m.Register(popularesgrancanaria.New())
+	m.Register(fca.New())
+	m.Register(ahotu.New())
+	m.Register(toptime.New())
+	m.Register(gomeraparadise.New())
+	m.Register(winerun.New())
+	m.Register(fuerteventura.New())
+	m.Register(lanzarote.New())
+	m.Register(codex.New())
 
 	// Spustit Scrapovacího robota na pozadí (synch jednou za 24 hodin)
 	log.Println("Spouštím robota na pozadí pro scrapování reálných dat...")
@@ -124,6 +153,34 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Chyba při získávání závodů: %v", err)
 		races = []models.Race{} // Fallback na prázdné pole
 	}
+
+	// Seřadit závody chronologicky podle DateParsed
+	sort.Slice(races, func(i, j int) bool {
+		return races[i].DateParsed < races[j].DateParsed
+	})
+
+	// Vyfiltrovat pouze závody roku 2026 a novější a odstranit duplicity
+	seen := make(map[string]bool)
+	re := regexp.MustCompile(`[^a-z0-9]+`)
+	filtered := races[:0]
+
+	for _, r := range races {
+		// Rok 2026+
+		if r.DateParsed < "2026-01-01" {
+			continue
+		}
+
+		// Klíč pro duplicity: normalizované jméno + datum
+		nameKey := strings.ToLower(r.Name)
+		nameKey = re.ReplaceAllString(nameKey, "")
+		key := r.DateParsed + "_" + nameKey
+
+		if !seen[key] {
+			seen[key] = true
+			filtered = append(filtered, r)
+		}
+	}
+	races = filtered
 
 	// Renderování indexové šablony s daty
 	err = tmpl.ExecuteTemplate(w, "layout.html", map[string]interface{}{
