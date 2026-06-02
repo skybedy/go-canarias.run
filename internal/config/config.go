@@ -11,6 +11,8 @@ import (
 type Config struct {
 	Port                string
 	DataFile            string
+	StorageDriver       string
+	SQLiteDSN           string
 	EnableScraperDaemon bool
 	ScraperInterval     time.Duration
 }
@@ -19,6 +21,8 @@ func Load() (Config, error) {
 	cfg := Config{
 		Port:                getEnv("PORT", "8080"),
 		DataFile:            getEnv("DATA_FILE", "data.json"),
+		StorageDriver:       strings.ToLower(getEnv("STORAGE_DRIVER", "sqlite")),
+		SQLiteDSN:           getEnv("SQLITE_DSN", "file:canarias.db?_pragma=busy_timeout(5000)"),
 		EnableScraperDaemon: getEnvBool("ENABLE_SCRAPER_DAEMON", true),
 		ScraperInterval:     getEnvDurationHours("SCRAPER_INTERVAL_HOURS", 24),
 	}
@@ -26,8 +30,14 @@ func Load() (Config, error) {
 	if strings.TrimSpace(cfg.Port) == "" {
 		return Config{}, fmt.Errorf("PORT must not be empty")
 	}
-	if strings.TrimSpace(cfg.DataFile) == "" {
+	if cfg.StorageDriver == "json" && strings.TrimSpace(cfg.DataFile) == "" {
 		return Config{}, fmt.Errorf("DATA_FILE must not be empty")
+	}
+	if cfg.StorageDriver != "json" && cfg.StorageDriver != "sqlite" {
+		return Config{}, fmt.Errorf("STORAGE_DRIVER must be one of: json, sqlite")
+	}
+	if cfg.StorageDriver == "sqlite" && strings.TrimSpace(cfg.SQLiteDSN) == "" {
+		return Config{}, fmt.Errorf("SQLITE_DSN must not be empty when STORAGE_DRIVER=sqlite")
 	}
 	if cfg.ScraperInterval <= 0 {
 		return Config{}, fmt.Errorf("SCRAPER_INTERVAL_HOURS must be greater than 0")
