@@ -6,11 +6,13 @@
 
 ## Aktuální stav
 
-- Projekt je aktuálně na větvi `main`.
-- Dokončen první foundation krok bez zásahu do core logiky scraperů.
-- Přidána centralizovaná ENV konfigurace v `internal/config/config.go` a napojení v `main.go`.
-- Přidán health endpoint `GET /healthz`.
-- Přidány základní provozní soubory `README.md` a `Makefile`.
+- Projekt je aktuálně na větvi `feature/functional-web-app`.
+- Proběhl refactor bez změny core scraper logiky:
+  - bootstrap aplikace přesunut do `internal/app`
+  - HTTP vrstva přesunuta do `internal/web`
+  - `main.go` je teď tenký entrypoint
+- Přidána SQLite persistence (`internal/storage/sqlite_storage.go`) s ENV přepínačem storage driveru.
+- Web stále renderuje tabulku závodů a data se periodicky aktualizují přes scraper daemon.
 - Ověření prochází přes:
   - `GOCACHE=/tmp/go-build go test ./...`
   - `GOCACHE=/tmp/go-build go build ./...`
@@ -20,16 +22,18 @@
 - Go 1.24.0
 - Standardní `net/http` + `html/template`
 - `goquery` pro HTML parsing
-- JSON persistence (`data.json`)
+- SQLite nebo JSON persistence (`STORAGE_DRIVER=sqlite|json`)
 - Vanilla JS + vlastní CSS
 
 ## Hlavní adresáře a soubory
 
-- `main.go`: start aplikace, registrace scraperů, HTTP routing, napojení konfigurace
+- `main.go`: tenký entrypoint aplikace
+- `internal/app/app.go`: bootstrap aplikace, výběr storage, registrace scraperů, spuštění daemonu
+- `internal/web/server.go`: HTTP routing + handlery `/` a `/healthz`
 - `internal/config/config.go`: načítání a validace runtime konfigurace z ENV
 - `internal/scraper/`: scrapery jednotlivých zdrojů + manager
 - `internal/models/`: datové modely
-- `internal/storage/`: persistence vrstva (JSON storage)
+- `internal/storage/`: persistence vrstva (JSON + SQLite storage)
 - `templates/`: HTML šablony
 - `static/`: statické assety (CSS/JS)
 - `data.json`: uložená data závodů
@@ -41,7 +45,9 @@
 
 - Lokálně: `go run .` nebo `make run`
 - Volitelný port: env `PORT` (default `8080`)
-- Data soubor: env `DATA_FILE` (default `data.json`)
+- Storage driver:
+  - `STORAGE_DRIVER=sqlite` (default), `SQLITE_DSN`
+  - `STORAGE_DRIVER=json`, `DATA_FILE`
 - Background scraping daemon:
   - `ENABLE_SCRAPER_DAEMON=true|false` (default `true`)
   - `SCRAPER_INTERVAL_HOURS` (default `24`)
@@ -66,6 +72,6 @@
 
 ## Poznámky pro další navázání
 
-- Prioritní další krok refactoru: rozdělit `main.go` do `internal/web` a `internal/app` bez změny scraper funkcionality.
+- Další praktický krok je doplnit uživatelské server-side filtrování tabulky (např. ostrov, měsíc, typ) přes query parametry.
+- Pokud se bude dál rozšiřovat DB vrstva, přidat migrační adresář `migrations/` a tasky v `Makefile`.
 - Držet malé inkrementální změny a po každé ověřovat `go test ./...` a `go build ./...` s `GOCACHE=/tmp/go-build`.
-- Pokud se mění behavior serveru nebo datový model, aktualizovat `DECISIONS.md` a `TODO.md`.
