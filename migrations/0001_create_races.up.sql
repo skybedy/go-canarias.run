@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS races (
+  id VARCHAR(255) NOT NULL,
+  name VARCHAR(500) NOT NULL,
+  date_raw VARCHAR(100),
+  date_parsed DATE,
+  month VARCHAR(10),
+  island VARCHAR(100),
+  location VARCHAR(255),
+  distances_json TEXT,
+  source VARCHAR(255),
+  status VARCHAR(50),
+  url TEXT,
+  type VARCHAR(100),
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_races_date_parsed (date_parsed),
+  KEY idx_races_island (island)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -111,6 +111,8 @@ func newStorage(cfg config.Config) (storage.Storage, error) {
 		return storage.NewJSONStorage(cfg.DataFile), nil
 	case "sqlite":
 		return storage.NewSQLiteStorage(cfg.SQLiteDSN)
+	case "mariadb":
+		return storage.NewMariaDBStorage(cfg.MariaDBDSN)
 	default:
 		return nil, fmt.Errorf("unsupported STORAGE_DRIVER: %s", cfg.StorageDriver)
 	}
