@@ -7,6 +7,9 @@ MIGRATE := go run -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate
 run:
 	GOCACHE=/tmp/go-build go run .
 
+dev:
+	air
+
 test:
 	GOCACHE=/tmp/go-build go test ./...
 

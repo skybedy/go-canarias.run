@@ -1,0 +1,19 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "GOCACHE=/tmp/go-build go build -o ./tmp/canarias ."
+  bin = "./tmp/canarias"
+  full_bin = "env $(cat .env | grep -v '#' | xargs) ./tmp/canarias"
+  include_ext = ["go", "html", "css", "js"]
+  exclude_dir = ["tmp", "bin", "vendor"]
+  delay = 500
+
+[log]
+  time = false
+
+[color]
+  app = "green"
+  build = "yellow"
+  runner = "cyan"
+  watcher = "blue"
