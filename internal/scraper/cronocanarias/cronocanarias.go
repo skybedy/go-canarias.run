@@ -5,11 +5,44 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"canarias.run/internal/models"
 	"canarias.run/internal/utils"
 	"github.com/PuerkitoBio/goquery"
 )
+
+var mesesES = map[string]string{
+	"enero": "01", "febrero": "02", "marzo": "03", "abril": "04",
+	"mayo": "05", "junio": "06", "julio": "07", "agosto": "08",
+	"septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12",
+}
+
+// parseDateES parsuje španělský formát "31 diciembre, 2026" na "2026-12-31"
+func parseDateES(raw string) (string, string) {
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	raw = strings.ReplaceAll(raw, ",", "")
+	parts := strings.Fields(raw)
+	if len(parts) != 3 {
+		return "", ""
+	}
+	day := parts[0]
+	if len(day) == 1 {
+		day = "0" + day
+	}
+	month, ok := mesesES[parts[1]]
+	if !ok {
+		return "", ""
+	}
+	year := parts[2]
+	dateParsed := fmt.Sprintf("%s-%s-%s", year, month, day)
+	t, err := time.Parse("2006-01-02", dateParsed)
+	if err != nil {
+		return "", ""
+	}
+	monthShort := strings.ToUpper(t.Format("Jan"))
+	return dateParsed, monthShort
+}
 
 // Scraper implementuje rozhraní scraper.Scraper pro CronoCanarias
 type Scraper struct {
@@ -83,18 +116,19 @@ func (s *Scraper) Scrape(ctx context.Context) ([]models.Race, error) {
 			isl = utils.IdentifyIsland(title, link, detailText)
 		}
 
+		dateParsed, monthShort := parseDateES(dateRaw)
+
 		race := models.Race{
-			ID:        fmt.Sprintf("cronoline_%d", i),
-			Name:      title,
-			DateRaw:   dateRaw,
-			Month:     "TBD", // Bude zpracováno společným datumových parserem
-			Island:    isl,
-			Location:  "",
-			Distances: []string{}, // Nelze získat bez detailu
-			Source:    s.Name(),
-			Status:    "open",
-			URL:       link,
-			Type:      modalityDesc,
+			Name:       title,
+			DateRaw:    dateRaw,
+			DateParsed: dateParsed,
+			Month:      monthShort,
+			Island:     isl,
+			Location:   "",
+			Source:     s.Name(),
+			Status:     "open",
+			URL:        link,
+			Type:       modalityDesc,
 		}
 
 		races = append(races, race)

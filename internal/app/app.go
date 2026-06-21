@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"canarias.run/internal/config"
-	"canarias.run/internal/models"
 	"canarias.run/internal/scraper"
 	"canarias.run/internal/scraper/ahotu"
 	"canarias.run/internal/scraper/ascensotiming"
@@ -59,51 +58,6 @@ func (a *App) StartScraperDaemon(ctx context.Context) {
 	log.Println("Background scraping daemon je vypnuty pres ENABLE_SCRAPER_DAEMON.")
 }
 
-func (a *App) EnsureSeedData(ctx context.Context) {
-	races, err := a.Store.GetAllRaces(ctx)
-	if err != nil {
-		log.Printf("Chyba pri cteni dat: %v", err)
-		return
-	}
-	if len(races) > 0 {
-		return
-	}
-
-	seed := []models.Race{
-		{
-			ID:         "1",
-			DateRaw:    "15. 3. 2026",
-			DateParsed: "2026-03-15",
-			Month:      "MAR",
-			Name:       "Transgrancanaria Ultra",
-			Island:     "Gran Canaria",
-			Location:   "Maspalomas",
-			Distances:  []string{"126km", "84km", "46km"},
-			Source:     "CronoCanarias",
-			Status:     "open",
-			URL:        "#",
-			Type:       "trail",
-		},
-		{
-			ID:         "2",
-			DateRaw:    "2. 4. 2026",
-			DateParsed: "2026-04-02",
-			Month:      "APR",
-			Name:       "Media Maraton Las Galletas",
-			Island:     "Tenerife",
-			Location:   "Arona",
-			Distances:  []string{"21km", "10km"},
-			Source:     "Sportmaniacs",
-			Status:     "closing",
-			URL:        "#",
-			Type:       "asphalt",
-		},
-	}
-
-	if err := a.Store.SaveRaces(ctx, seed); err != nil {
-		log.Printf("Nepodarilo se ulozit uvodni data: %v", err)
-	}
-}
 
 func newStorage(cfg config.Config) (storage.Storage, error) {
 	switch strings.ToLower(cfg.StorageDriver) {

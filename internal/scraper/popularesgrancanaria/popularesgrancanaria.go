@@ -75,12 +75,12 @@ func (s *PopularesGranCanariaScraper) Scrape(ctx context.Context) ([]models.Race
 				return
 			}
 
-			// e.g., dateStr is "05/11/2025" or "15/11/2026"
-			parsedDate, err := time.Parse("02/01/2006", dateStr)
-
 			var raceDate time.Time
-			if err == nil {
-				raceDate = parsedDate
+			for _, layout := range []string{"02/01/2006", "2/01/2006", "2/1/2006", "02/1/2006"} {
+				if t, err := time.Parse(layout, dateStr); err == nil {
+					raceDate = t
+					break
+				}
 			}
 
 			// Parse race type somewhat consistently
@@ -105,10 +105,15 @@ func (s *PopularesGranCanariaScraper) Scrape(ctx context.Context) ([]models.Race
 				monthShort = strings.ToUpper(raceDate.Format("Jan"))
 			}
 
+			dateParsed := ""
+			if !raceDate.IsZero() {
+				dateParsed = raceDate.Format("2006-01-02")
+			}
+
 			race := models.Race{
 				Name:       raceName,
 				DateRaw:    dateStr,
-				DateParsed: raceDate.Format("2006-01-02"),
+				DateParsed: dateParsed,
 				Month:      monthShort,
 				Island:     utils.IdentifyIsland(raceName, "Gran Canaria"),
 				Location:   "Gran Canaria",

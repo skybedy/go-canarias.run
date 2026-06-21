@@ -2,6 +2,8 @@ package scraper
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"log"
 	"regexp"
 	"sort"
@@ -83,6 +85,9 @@ func (m *Manager) ExecuteAll(ctx context.Context) {
 	wg.Wait()
 
 	if len(allRaces) > 0 {
+		allRaces = filterRaces(allRaces)
+		allRaces = ensureIDs(allRaces)
+
 		existing, err := m.store.GetAllRaces(ctx)
 		if err != nil {
 			log.Printf("[Manager] ⚠️ Nelze načíst stávající data pro merge: %v", err)
@@ -214,6 +219,73 @@ func firstNonEmpty(values ...string) string {
 
 func richerName(a, b string) bool {
 	return len(strings.TrimSpace(a)) > len(strings.TrimSpace(b))
+}
+
+var excludedTypes = []string{
+	"mtb", "bici", "mountain bike",
+	"swim", "plavání", "nado", "travesía",
+	"hiking",
+	"triathlon",
+}
+
+var typeMapping = []struct {
+	keywords []string
+	category string
+}{
+	{[]string{"trail"}, "trail"},
+	{[]string{"ocr/trail", "ocr"}, "ocr"},
+	{[]string{"running", "road", "asfalto"}, "road"},
+	{[]string{"cross"}, "cross"},
+	{[]string{"orientac", "orienteering"}, "orienteering"},
+}
+
+func normalizeType(raw string) string {
+	t := strings.ToLower(strings.TrimSpace(raw))
+	for _, m := range typeMapping {
+		for _, kw := range m.keywords {
+			if strings.Contains(t, kw) {
+				return m.category
+			}
+		}
+	}
+	return t
+}
+
+func filterRaces(races []models.Race) []models.Race {
+	out := races[:0]
+	for _, r := range races {
+		t := strings.ToLower(r.Type)
+		excluded := false
+		for _, ex := range excludedTypes {
+			if strings.Contains(t, ex) {
+				excluded = true
+				break
+			}
+		}
+		if excluded {
+			continue
+		}
+		r.Type = normalizeType(r.Type)
+		out = append(out, r)
+	}
+	return out
+}
+
+func ensureIDs(races []models.Race) []models.Race {
+	for i := range races {
+		if races[i].ID != "" {
+			continue
+		}
+		key := raceKey(races[i])
+		if key == "" {
+			key = fallbackKey(races[i])
+		}
+		if key != "" {
+			sum := sha256.Sum256([]byte(key))
+			races[i].ID = fmt.Sprintf("%x", sum[:8])
+		}
+	}
+	return races
 }
 
 func mergeSourceLabels(a, b string) string {

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -29,8 +30,8 @@ func (r Race) Day() string {
 	return "?"
 }
 
-// DateFormatted returns the date as dd.mm.yyyy, parsed from DateParsed (ISO 2006-01-02).
-// Falls back to DateRaw if parsing fails.
+// DateFormatted returns the date as DD/MM/YYYY.
+// Falls back to DateRaw if DateParsed is missing or invalid.
 func (r Race) DateFormatted() string {
 	if r.DateParsed == "" || r.DateParsed == "0001-01-01" {
 		return r.DateRaw
@@ -39,7 +40,7 @@ func (r Race) DateFormatted() string {
 	if err != nil {
 		return r.DateRaw
 	}
-	return t.Format("02.01.2006")
+	return fmt.Sprintf("%d/%d/%02d", t.Day(), t.Month(), t.Year()%100)
 }
 
 func (r Race) DistancesStr() string {

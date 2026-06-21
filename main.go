@@ -17,7 +17,6 @@ func main() {
 	}
 
 	application.StartScraperDaemon(context.Background())
-	application.EnsureSeedData(context.Background())
 
 	server, err := web.New(application)
 	if err != nil {
