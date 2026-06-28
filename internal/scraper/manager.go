@@ -223,7 +223,8 @@ func richerName(a, b string) bool {
 
 var excludedTypes = []string{
 	"mtb", "bici", "mountain bike",
-	"swim", "plavání", "nado", "travesía",
+	"swim", "plavání", "nado", "travesía", "natación", "natacion",
+	"marcha", "nordic",
 	"hiking",
 	"triathlon",
 }

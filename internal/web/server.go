@@ -2,14 +2,17 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"canarias.run/internal/app"
+	"canarias.run/internal/i18n"
 	"canarias.run/internal/models"
 )
 
@@ -19,7 +22,34 @@ type Server struct {
 }
 
 func New(a *app.App) (*Server, error) {
-	tmpl, err := template.ParseGlob("templates/*.html")
+	funcs := template.FuncMap{
+		"typeLabel": func(msgs map[string]string, raceType string) string {
+			key := "type_" + raceType
+			if v, ok := msgs[key]; ok {
+				return v
+			}
+			return raceType
+		},
+		"formatDate": func(locale, dateParsed, dateRaw string) string {
+			if dateParsed == "" || dateParsed == "0001-01-01" {
+				return dateRaw
+			}
+			t, err := time.Parse("2006-01-02", dateParsed)
+			if err != nil {
+				return dateRaw
+			}
+			d, m, y := t.Day(), int(t.Month()), t.Year()%100
+			switch locale {
+			case "en":
+				return fmt.Sprintf("%d/%d/%02d", m, d, y)
+			case "cs":
+				return fmt.Sprintf("%d.%d.%02d", d, m, y)
+			default: // es
+				return fmt.Sprintf("%d/%d/%02d", d, m, y)
+			}
+		},
+	}
+	tmpl, err := template.New("").Funcs(funcs).ParseGlob("templates/*.html")
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +60,8 @@ func (s *Server) Run() error {
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
-	mux.HandleFunc("/", s.handleIndex)
 	mux.HandleFunc("/healthz", s.handleHealthz)
+	mux.HandleFunc("/", s.handleIndex)
 
 	addr := ":" + s.app.Config.Port
 	log.Printf("Server posloucha na http://localhost:%s", s.app.Config.Port)
@@ -39,7 +69,19 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
+	path := r.URL.Path
+
+	// Zjisti locale z URL prefixu (/en, /cs) nebo použij výchozí (es)
+	locale := i18n.DefaultLocale
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) > 0 && i18n.IsSupportedLocale(parts[0]) {
+		locale = parts[0]
+		// Pouze kořenová stránka locale je platná (/en nebo /en/)
+		if len(parts) > 1 && parts[1] != "" {
+			http.NotFound(w, r)
+			return
+		}
+	} else if path != "/" {
 		http.NotFound(w, r)
 		return
 	}
@@ -71,9 +113,13 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		filtered = append(filtered, race)
 	}
 
+	msgs := i18n.Messages(locale)
 	err = s.templates.ExecuteTemplate(w, "layout.html", map[string]any{
-		"Title": "canarias.run - Tvuj kalendar bezeckych zavodu",
-		"Races": filtered,
+		"Title":     msgs["site_title"],
+		"Races":     filtered,
+		"Messages":  msgs,
+		"Locale":    locale,
+		"Languages": i18n.SupportedLanguages(),
 	})
 	if err != nil {
 		log.Printf("Chyba pri renderovani sablony: %v", err)

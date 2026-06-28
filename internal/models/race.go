@@ -47,25 +47,19 @@ func (r Race) DistancesStr() string {
 	return strings.Join(r.Distances, ", ")
 }
 
-func (r Race) TypeCZ() string {
-	t := strings.ToLower(r.Type)
-	switch {
-	case strings.Contains(t, "trail") || strings.Contains(t, "hory") || strings.Contains(t, "montaña") || strings.Contains(t, "montana"):
-		return "Horský běh / Trail"
-	case strings.Contains(t, "asphalt") || strings.Contains(t, "asfalto") || strings.Contains(t, "silnice"):
-		return "Silniční běh"
-	case strings.Contains(t, "mtb") || strings.Contains(t, "bici"):
-		return "Horská kola (MTB)"
-	case strings.Contains(t, "plavání") || strings.Contains(t, "swim") || strings.Contains(t, "nado") || strings.Contains(t, "travesía"):
-		return "Plavání"
-	case strings.Contains(t, "marcha") || strings.Contains(t, "nordic"):
-		return "Nordic Walking"
-	case strings.Contains(t, "orient"):
-		return "Orientační běh"
+func (r Race) TypeLabel() string {
+	switch r.Type {
+	case "trail":
+		return "Trail"
+	case "road":
+		return "Road"
+	case "cross":
+		return "Cross"
+	case "orienteering":
+		return "Orienteering"
+	case "ocr":
+		return "OCR"
 	default:
-		if r.Type != "" {
-			return r.Type
-		}
-		return "Závod"
+		return r.Type
 	}
 }

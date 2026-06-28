@@ -1,32 +1,27 @@
 {{define "content"}}
-<div class="container" style="padding: 2rem 0;">
-    <table
-        style="width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #eee; font-family: 'Inter', sans-serif;">
+<h1 style="margin-bottom: 1.5rem;">{{index .Messages "page_heading"}}</h1>
+<div style="overflow-x: auto;">
+    <table>
         <thead style="background: #f4f4f4;">
             <tr>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Datum</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Závod</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Lokalita</th>
-                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Odkaz</th>
+                <th style="text-align: left;">{{index .Messages "col_date"}}</th>
+                <th style="text-align: left;">{{index .Messages "col_name"}}</th>
+                <th style="text-align: left;">{{index .Messages "col_location"}}</th>
+                <th style="text-align: left;">{{index .Messages "col_type"}}</th>
             </tr>
         </thead>
         <tbody>
+            {{if not .Races}}
+            <tr><td colspan="4">{{index .Messages "no_races"}}</td></tr>
+            {{else}}
             {{range .Races}}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 12px; white-space: nowrap; font-family: monospace; color: #d35400;">
-                    {{.DateFormatted}}</td>
-                <td style="padding: 12px;">
-                    <div style="font-weight: bold;">{{.Name}}</div>
-                    <div style="font-size: 0.8em; color: #777;">{{.TypeCZ}}</div>
-                </td>
-                <td style="padding: 12px;">
-                    <div>{{.Island}}</div>
-                </td>
-                <td style="padding: 12px; text-align: center;">
-                    <a href="{{.URL}}" target="_blank"
-                        style="color: #3498db; text-decoration: none; font-weight: bold;">Odkaz</a>
-                </td>
+            <tr>
+                <td style="white-space: nowrap; font-family: monospace; color: #d35400;">{{formatDate $.Locale .DateParsed .DateRaw}}</td>
+                <td style="font-weight: bold;">{{.Name}}</td>
+                <td>{{.Island}}</td>
+                <td style="font-size: 0.85em; color: #777;">{{typeLabel $.Messages .Type}}</td>
             </tr>
+            {{end}}
             {{end}}
         </tbody>
     </table>
